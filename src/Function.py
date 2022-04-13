@@ -1,49 +1,65 @@
 from __future__ import annotations
+from typing import Any
+from abc import ABCMeta, abstractmethod
 
-__all__ = ['Function', 'Constant', 'Variable']
+__all__ = ['Function', 'Constant', 'Variable', 'FunctionMeta']
 
-class Function:
-    """A class representing an arbitrary function"""
-    __match_args__: tuple[str, ...]
+class FunctionMeta(type):
+    """A metaclass whose instances are function classes"""
+    def __new__(cls, name: str, bases: tuple[type, ...], dic: dict[str, Any]):
+        return super(FunctionMeta, cls).__new__(cls, name, bases, dic)
+    
+    def __init__(self, name, bases, dic: dict):
+        type.__init__(self, name, bases, dic)
+        annotations = dic.get('__annotations__', {})
 
-    def __init__(self, *args):
-        """Default initializer, used to avoid rewriting __init__ for subclasses"""
-        for i, arg in enumerate(args):
-            setattr(self, self.__match_args__[i], arg)
+        def init(self, *args):
+            for name, arg in zip(annotations, args):
+                setattr(self, name, arg)
+        setattr(self, '__init__', init)
+        setattr(self, '__match_args__', tuple(annotations))
 
-    def eval(self, **kwargs) -> Function:
-        """Return a new Function computed by "plugging in" the values given in kwargs for the Variables in self"""
-        return self.simplify()
+class FunctionABCMeta(FunctionMeta, ABCMeta):
+    """Empty class to allow """
+    ...
+
+class Function(metaclass=FunctionABCMeta):
+    """Abstract base class for function classes"""
+    @abstractmethod
+    def eval(self, **kwargs) -> Function:  ...
+
+    @abstractmethod
+    def __str__(self) -> str: ...
 
     def latex(self) -> str:
-        """Return a LaTeX representation of the Function"""
-        return str(self.__match_args__[0])
-
-    def __str__(self) -> str:
-        """Return a human-readable string representation of the Function"""
-        return str(getattr(self, self.__match_args__[0]))
-
+        return str(self)
+    
     def __repr__(self) -> str:
-        """Return a possible constructor for the Function"""
-        cls  = type(self).__name__
-        args = ', '.join([getattr(self, arg).__repr__() for arg in self.__match_args__])
+        cls, match_args = type(self).__name__, getattr(self, '__match_args__')
+        args = args = ', '.join([getattr(self, arg).__repr__() for arg in match_args])
         return f'{cls}({args})'
-
-    def simplify(self) -> Function:
-        """Return an algebraic of the Function (see docs)"""
-        return self
     
     def __call__(self, **kwargs) -> Function:
-        """Calling the function just calls eval, should be no need to overwrite this"""
         return self.eval(**kwargs)
+    
+    def simplify(self) -> Function:
+        return self
 
 class Constant(Function):
-    __match_args__ = ('value',)
-    value: str
+    value: Any
 
+    def eval(self, **kwargs) -> Function:
+        return Constant(self.value)
+    
+    def __str__(self) -> str:
+        return str(self.value)
+        
 class Variable(Function):
-    __match_args__ = ('name',)
     name: str
 
     def eval(self, **kwargs) -> Function:
-        return kwargs[self.name] if self.name in kwargs else self
+        return kwargs[self.name] if self.name in kwargs else Variable(self.name)
+
+    def __str__(self) -> str:
+        return self.name
+
