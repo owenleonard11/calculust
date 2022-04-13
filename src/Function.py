@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 from abc import ABCMeta, abstractmethod
 
-__all__ = ['Function', 'Constant', 'Variable', 'FunctionMeta']
+__all__ = ['FunctionMeta', 'FunctionABCMeta', 'Function', 'Constant', 'Variable']
 
 class FunctionMeta(type):
     """A metaclass whose instances are function classes"""
@@ -16,11 +16,17 @@ class FunctionMeta(type):
         def init(self, *args):
             for name, arg in zip(annotations, args):
                 setattr(self, name, arg)
+        
+        def iter(self):
+            for arg in self.__match_args__:
+                yield getattr(self, arg)
+
         setattr(self, '__init__', init)
+        setattr(self, '__iter__', iter)
         setattr(self, '__match_args__', tuple(annotations))
 
 class FunctionABCMeta(FunctionMeta, ABCMeta):
-    """Empty class to allow """
+    """Empty class to allow inheritance from Function and ABC"""
     ...
 
 class Function(metaclass=FunctionABCMeta):
@@ -62,4 +68,3 @@ class Variable(Function):
 
     def __str__(self) -> str:
         return self.name
-
