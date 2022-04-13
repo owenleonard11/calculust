@@ -1,4 +1,5 @@
-from Function import Function, Constant, FunctionABCMeta
+from Function import Function, FunctionABCMeta
+from bases import Constant
 
 __all__ = ['binaryinfix']
 
@@ -15,16 +16,17 @@ def binaryinfix(cls) -> FunctionABCMeta:
         return f'{self.l} {type(self).OP_STR} {self.r}'
     
     def simplify(self) -> Function:
+        print(f'attempting to simplify {self!r}')
         l, r, cls = self.l, self.r, type(self)
         match (l, r):
-            case (Constant(x), Constant(y)):
+            case (Constant(x), Constant(y)): # ex: 6 / 3 -> 2
                 return Constant(cls.OP_FUNC(x, y))
-            case (x, cls.IDENT):
-                return type(x)(*x)
-            case (cls.IDENT, y):
-                return type(y)(*y)
+            case (x, Constant(cls.IDENT)): # ex: (2 - 3) * 1 -> 2 - 3
+                return type(x)(*x).simplify()
+            case (Constant(cls.IDENT), y): # ex: 0 + sin(x) -> sin(x)
+                return type(y)(*y).simplify()
             case _:
-                return type(self)(self.l, self.r)
+                return type(self)(self.l.simplify(), self.r.simplify()).simplify()
     
     setattr(cls, 'eval', eval)
     setattr(cls, '__str__', string)
