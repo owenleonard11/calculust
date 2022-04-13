@@ -3,7 +3,7 @@ from typing import Any
 from definition_utils import *
 from Function import Function
 
-__all__ = ['Constant', 'Function']
+__all__ = ['Constant', 'Variable']
 
 # constants and variables
 class Constant(Function):

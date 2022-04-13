@@ -15,8 +15,7 @@ def binaryinfix(cls) -> FunctionABCMeta:
     def string(self) -> str:
         return f'{self.l} {type(self).OP_STR} {self.r}'
     
-    def simplify(self) -> Function:
-        print(f'attempting to simplify {self!r}')
+    def _simplify(self) -> Function:
         l, r, cls = self.l, self.r, type(self)
         match (l, r):
             case (Constant(x), Constant(y)): # ex: 6 / 3 -> 2
@@ -26,11 +25,11 @@ def binaryinfix(cls) -> FunctionABCMeta:
             case (Constant(cls.IDENT), y): # ex: 0 + sin(x) -> sin(x)
                 return type(y)(*y).simplify()
             case _:
-                return type(self)(self.l.simplify(), self.r.simplify()).simplify()
+                return type(self)(self.l.simplify(), self.r.simplify())
     
     setattr(cls, 'eval', eval)
     setattr(cls, '__str__', string)
-    setattr(cls, 'simplify', simplify)
+    setattr(cls, '_simplify', _simplify)
     dic = cls.__dict__ | {'__annotations__': {'l': Function, 'r': Function}}
 
     return FunctionABCMeta(cls.__name__, (Function,), dic)

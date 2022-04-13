@@ -52,5 +52,12 @@ class Function(metaclass=FunctionABCMeta):
             return tuple(self) == tuple(other) # type: ignore
         return False
     
-    def simplify(self) -> Function:
+    def _simplify(self) -> Function:
         return self
+    
+    def simplify(self) -> Function:
+        simplified = self._simplify()
+        if simplified == simplified._simplify():
+            return simplified
+        else:
+            return simplified.simplify()
