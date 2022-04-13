@@ -41,12 +41,16 @@ class Function(metaclass=FunctionABCMeta):
         return str(self)
     
     def __repr__(self) -> str:
-        cls, match_args = type(self).__name__, getattr(self, '__match_args__')
-        args = args = ', '.join([getattr(self, arg).__repr__() for arg in match_args])
+        cls, args = type(self).__name__, ', '.join(f'{arg!r}' for arg in self) # type: ignore
         return f'{cls}({args})'
     
     def __call__(self, **kwargs) -> Function:
         return self.eval(**kwargs)
+    
+    def __eq__(self, other) -> bool:
+        if type(self) is type(other):
+            return tuple(self) == tuple(other) # type: ignore
+        return False
     
     def simplify(self) -> Function:
         return self
